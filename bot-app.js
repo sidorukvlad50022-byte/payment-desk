@@ -82,22 +82,27 @@ function contentSections(container,benefits,sections){
 }
 function renderServicePrintSummary(device,category,model,price,glass,acc,trade){let summary=$('service-print-summary');if(!summary){summary=node('div',undefined,'service-print-summary');summary.id='service-print-summary';const panel=document.querySelector('[data-panel=services]');panel?.insertBefore(summary,$('service-results'));}summary.replaceChildren();const meta=node('div',undefined,'service-print-meta');meta.append(node('div',`Вартість пристрою: ${money(price)}`,'service-print-emphasis'),node('div',`Скло: ${money(glass)}`),node('div',`Аксесуари: ${money(acc)}`),node('div',`Trade-in: − ${money(trade)}`,'service-print-emphasis'),node('strong',`Сума чеку без Сервісу від магазину YABLUKA. ${money(price+glass+acc-trade)}`));summary.append(meta);}
 let serviceCreditsVisible=false;
-const serviceFinanceSelections=new Map();
+const serviceFinanceSelections=new Map(),serviceFinanceKinds=new Map(),serviceFinanceAdded=new Set();
+let serviceFinanceDraft=null;
+let serviceFinanceContext=[];
+const serviceFinanceDialog=$('service-finance-dialog');
 const serviceFinanceActions=document.querySelector('.service-form-actions');
 if(serviceFinanceActions&&!$('s-finance-kind')){
  const field=node('div',undefined,'service-finance-kind'),label=node('label','Спосіб оплати'),select=node('select');
  label.htmlFor='s-finance-kind';select.id='s-finance-kind';
  for(const [value,title] of [['installment','Оплата частинами'],['regular','Звичайний кредит'],['promo','Акційний кредит']]){const option=node('option',title);option.value=value;select.append(option);}
- field.append(label,select);serviceFinanceActions.prepend(field);
- const button=$('s-credit');if(button){button.textContent='Показати платежі';button.setAttribute('aria-expanded','false');}
+ field.append(label,select);$('service-finance-type-host').append(field);
+ select.addEventListener('change',()=>{if(serviceFinanceDraft){serviceFinanceDraft.kind=select.value;renderServiceFinanceDialog();}});
+ const button=$('s-credit');if(button){button.textContent='Кредит';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','service-finance-dialog');}
 }
-function serviceFinanceBox(total,key,termLabel){
- const kind=$('s-finance-kind')?.value||'installment',stateKey=key+'|'+kind,state=serviceFinanceSelections.get(stateKey)||{},box=node('div',undefined,'service-credit-box'),select=node('select'),term=node('select'),quote=node('div',undefined,'service-credit-quote');
- const id='service-finance-'+encodeURIComponent(key).replaceAll('%','-');
+function serviceFinanceBox(total,key,termLabel,inDialog=false){
+ const kind=(inDialog?serviceFinanceDraft?.kind:serviceFinanceKinds.get(key))||'installment',selectionMap=inDialog?serviceFinanceDraft.selections:serviceFinanceSelections,stateKey=key+'|'+kind,state={...(selectionMap.get(stateKey)||{})},box=node('div',undefined,'service-credit-box'),select=node('select'),term=node('select'),quote=node('div',undefined,'service-credit-quote');
+ const id='service-finance-'+encodeURIComponent(key).replaceAll('%','-')+(inDialog?'-modal':'');
  const label=node('label',kind==='installment'?'Банк':'Кредитний продукт');label.htmlFor=id;select.id=id;select.className='service-finance-product';
  const termField=node('div',undefined,'service-finance-term'),termLabelNode=node('label','Кількість платежів');termLabelNode.htmlFor=id+'-term';term.id=id+'-term';termField.append(termLabelNode,term);termField.hidden=kind!=='installment';
- const catalog=kind==='installment'?D.credit.installment_banks:kind==='regular'?D.credit.regular_credit_products:D.credit.promo_credit_products;
- for(const name of Object.keys(catalog||{})){const option=node('option',name);option.value=name;select.append(option);}if(Object.hasOwn(catalog||{},state.product))select.value=state.product;
+ const context=serviceFinanceContext.find(item=>item.key===key);
+ const catalog=kind==='installment'?D.credit.installment_banks:kind==='regular'?D.credit.regular_credit_products:SiteCMS.promoProducts(D.credit.promo_credit_products,globalThis.SiteSettings,context?.offer,context?.device);
+ for(const name of Object.keys(catalog||{})){const option=node('option',name);option.value=name;select.append(option);}if(Object.hasOwn(catalog||{},state.product))select.value=state.product;else if(kind==='promo'&&state.product){const unavailable=node('option',state.product+' — недоступний');unavailable.value='';unavailable.disabled=true;select.prepend(unavailable);select.value='';}
  const printSummary=node('div',undefined,'service-finance-print');let printOffers=[];
  const printBank=(name,result,errorMessage)=>printOffers.push({name,result,errorMessage});
  const renderBestBanks=()=>{
@@ -110,8 +115,9 @@ function serviceFinanceBox(total,key,termLabel){
  };
  const update=()=>{
   printOffers=[];printSummary.replaceChildren();
-  const chosen=catalog?.[select.value],lines=[];state.product=select.value;state.term=term.value;serviceFinanceSelections.set(stateKey,state);
-  if(!chosen){quote.replaceChildren(node('p','Немає доступних пропозицій для цього способу оплати.'));printSummary.append(node('p','Немає доступних пропозицій.'));return;}
+  const chosen=catalog?.[select.value],lines=[];if(chosen){state.product=select.value;state.term=term.value;selectionMap.set(stateKey,state);}
+  if(inDialog)$('service-finance-done').disabled=!printOffers.some(offer=>offer.result);
+  if(!chosen){const message=kind==='promo'?'Акційний кредит недоступний для цієї послуги. Оберіть дозволений продукт або інший спосіб оплати.':'Немає доступних пропозицій для цього способу оплати.';quote.replaceChildren(node('p',message));printSummary.append(node('p',message));return;}
   lines.push(node('strong',kind==='installment'?'Оплата частинами · '+select.value:(kind==='regular'?'Звичайний кредит':'Акційний кредит')+' · '+select.value));
   lines.push(node('p','Сума з послугою: '+money(total)+' · без першого внеску. Термін послуги: '+termLabel+'.','field-help'));
   if(kind==='installment'){
@@ -119,19 +125,49 @@ function serviceFinanceBox(total,key,termLabel){
   }else for(const [name,bank] of Object.entries(chosen.banks||{})){
    try{const result=C.paper(total,0,chosen,bank);printBank(name,result);lines.push(node('div',name+': '+money(result.monthly)+' / міс.'),node('p',result.months+' міс. · Комісія '+bank.commission_percent+'% ('+money(result.commission)+') · SMS '+money(result.sms)+' · Разом '+money(result.total),'field-help'));}catch(error){printBank(name,null,error.message);lines.push(node('p',name+': '+error.message,'error'));}
   }
-  renderBestBanks();
+  renderBestBanks();if(inDialog)$('service-finance-done').disabled=!printOffers.some(offer=>offer.result);
   quote.replaceChildren(...lines);
  };
  const updateTerms=()=>{term.replaceChildren();for(const [months,rate] of Object.entries(catalog?.[select.value]?.payment_options||{})){const option=node('option',months+' платежів · '+rate+'%');option.value=months;term.append(option);}if([...term.options].some(o=>o.value===state.term))term.value=state.term;};
  select.addEventListener('change',()=>{updateTerms();update();});term.addEventListener('change',update);updateTerms();update();
  const open=node('button','Відкрити розрахунок ↗','secondary compact');open.type='button';open.disabled=!select.options.length;
  open.addEventListener('click',()=>{
+  if(serviceFinanceDialog.open)serviceFinanceDialog.close();
   if(kind==='installment'){$('i-price').value=(total/100).toFixed(2);$('i-down').value='0';$('i-extra').value='0';$('i-bank').value=select.value;installTerms();$('i-term').value=term.value;renderInstallment();location.hash='installment';}
   else{$('p-price').value=(total/100).toFixed(2);$('p-down').value='0';$('p-extra').value='0';$('p-kind').value=kind==='regular'?'regular_credit_products':'promo_credit_products';paperTerms();$('p-product').value=select.value;refreshCustomDropdowns();renderPaper();location.hash='paper';}
  });
- box.append(label,select,termField,quote,printSummary,open);box.hidden=!serviceCreditsVisible;return box;
+ box.append(label,select,termField,quote,printSummary,open);box.hidden=!inDialog;return box;
 }
+function startServiceFinanceDraft(key){
+ const context=serviceFinanceContext.find(item=>item.key===key)||serviceFinanceContext[0];if(!context)return;
+ serviceFinanceDraft={key:context.key,kind:serviceFinanceKinds.get(context.key)||'installment',selections:new Map([...serviceFinanceSelections].map(([k,v])=>[k,{...v}]))};
+}
+function openServiceFinance(key){
+ renderServices();startServiceFinanceDraft(key);if(!serviceFinanceDraft)return;
+ serviceCreditsVisible=true;renderServiceFinanceDialog();if(!serviceFinanceDialog.open)serviceFinanceDialog.showModal();
+}
+function renderServiceFinanceDialog(){
+ if(!serviceFinanceDraft)return;
+ const picker=$('s-finance-service');
+ picker.replaceChildren(...serviceFinanceContext.map(item=>{const option=node('option',item.title);option.value=item.key;return option;}));picker.value=serviceFinanceDraft.key;
+ $('s-finance-service-field').hidden=serviceFinanceContext.length<2;
+ $('s-finance-kind').value=serviceFinanceDraft.kind;
+ const context=serviceFinanceContext.find(item=>item.key===serviceFinanceDraft.key);
+ $('service-finance-dialog-content').replaceChildren(...(context?[serviceFinanceBox(context.total,context.key,context.termLabel,true)]:[node('p','Оберіть послугу та перевірте суму покупки.')]));
+}
+$('s-finance-service').addEventListener('change',()=>{startServiceFinanceDraft($('s-finance-service').value);renderServiceFinanceDialog();});
+$('service-finance-close').addEventListener('click',()=>serviceFinanceDialog.close());
+$('service-finance-done').addEventListener('click',()=>{
+ if(!serviceFinanceDraft)return;
+ const {key,kind,selections}=serviceFinanceDraft;
+ for(const mode of ['installment','regular','promo']){const state=selections.get(key+'|'+mode);if(state)serviceFinanceSelections.set(key+'|'+mode,{...state});}
+ serviceFinanceKinds.set(key,kind);serviceFinanceAdded.add(key);serviceFinanceDialog.close();
+});
+serviceFinanceDialog.addEventListener('close',()=>{if(serviceFinanceDialog.open)return;serviceCreditsVisible=false;serviceFinanceDraft=null;renderServices();});
+serviceFinanceDialog.addEventListener('click',event=>{if(event.target===serviceFinanceDialog){const bounds=serviceFinanceDialog.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)serviceFinanceDialog.close();}});
+window.addEventListener('hashchange',()=>{if(serviceFinanceDialog.open&&!['#services','#catalog'].includes(location.hash))serviceFinanceDialog.close();});
 function renderServices(){
+ serviceFinanceContext=[];
  try{
   const device=$('s-device').value,category=$('s-category').value,offers=D.serviceCalculator[device][category].offers;
   const selected=[...document.querySelectorAll('#service-choices input:checked')].map(b=>b.value);
@@ -143,14 +179,25 @@ function renderServices(){
    const noWarranty=title==='Без гарантії',offer=noWarranty?{variants:[['Без гарантії','0','0']],benefits:[],extra_sections:[]}:offers[title],card=node('article',undefined,'card service-card'),baseTotal=price+glass+acc-trade,firstResult=noWarranty?{total:baseTotal,price:0,discount:0}:C.service(device,title,price,glass,acc,trade,offer.variants?.[0]||[],offer.glass_discount_percent),heading=node('div',undefined,'service-card-heading');heading.append(node('h2',title),node('strong',`Доплата: ${money(firstResult.total-baseTotal)}`));card.append(node('div',device+' · '+category,'eyebrow'),heading);
    const table=node('table',undefined,'service-price-table'),thead=node('thead'),tr=node('tr');['Термін','Послуга','Знижка на скло','Разом'].forEach((h,i)=>tr.append(node('th',h,i===1||i===2?'service-price-breakdown':i===3?'service-price-total':'service-price-term')));thead.append(tr);table.append(thead);const body=node('tbody');
    for(const variant of offer.variants){const r=noWarranty?{price:0,discount:0,total:baseTotal}:C.service(device,title,price,glass,acc,trade,variant,offer.glass_discount_percent),row=node('tr');[variant[0],money(r.price),money(r.discount),money(r.total)].forEach((v,i)=>row.append(node('td',v,i===1||i===2?'service-price-breakdown':i===3?'service-price-total':'service-price-term')));body.append(row);}
+   serviceFinanceContext.push({title,total:firstResult.total,key:device+'|'+category+'|'+title,termLabel:offer.variants[0][0],offer,device});
    table.append(body);const creditBox=serviceFinanceBox(firstResult.total,device+'|'+category+'|'+title,offer.variants[0][0]);card.append(table,node('p',offer.variants.map(v=>`${v[0]}: ${v[1]}%${Number(v[2])?' · мін. '+money(C.toCents(v[2])):''}`).join(' / ')));
-   const details=node('details'),summary=node('summary','Що входить у послугу');details.append(summary);contentSections(details,offer.benefits,offer.extra_sections);card.append(details,creditBox);cards.push(card);
+   const details=node('details'),summary=node('summary','Що входить у послугу');details.append(summary);contentSections(details,offer.benefits,offer.extra_sections);card.append(details,creditBox);
+   const financeKey=device+'|'+category+'|'+title,financeControls=node('div',undefined,'service-finance-card-controls');
+   creditBox.classList.toggle('service-finance-unapplied',!serviceFinanceAdded.has(financeKey));
+   if(serviceFinanceAdded.has(financeKey)){
+    const applied=node('section',undefined,'service-finance-applied'),kind=serviceFinanceKinds.get(financeKey)||'installment',state=serviceFinanceSelections.get(financeKey+'|'+kind),label=kind==='installment'?'Оплата частинами':kind==='regular'?'Звичайний кредит':'Акційний кредит';
+    applied.append(node('strong',label+(kind!=='installment'&&state?.product?' · '+state.product:'')));
+    const summary=creditBox.querySelector('.service-finance-print').cloneNode(true);summary.className='service-finance-applied-summary';applied.append(summary);card.append(applied);
+   }
+   const edit=node('button',serviceFinanceAdded.has(financeKey)?'Змінити кредит':'Додати кредит','secondary compact');edit.type='button';edit.addEventListener('click',()=>openServiceFinance(financeKey));financeControls.append(edit);
+   if(serviceFinanceAdded.has(financeKey)){const remove=node('button','Прибрати','text-btn');remove.type='button';remove.addEventListener('click',()=>{serviceFinanceAdded.delete(financeKey);serviceFinanceKinds.delete(financeKey);renderServices();});financeControls.append(remove);}
+   card.append(financeControls);cards.push(card);
   }
   $('service-results').replaceChildren(...cards);
   const model=$('s-model-field').hidden?'':` · ${$('s-model').value}`;
   text('s-context',`${device} · ${category}${model} · Пристрій ${money(price)} + скло ${money(glass)} + аксесуари ${money(acc)} − Trade-in ${money(trade)} = ${money(price+glass+acc-trade)} без послуги. Пропозиції порівнюються окремо.`);renderServicePrintSummary(device,category,model,price,glass,acc,trade);
-  error('s-error');document.querySelector('[data-panel="services"] [data-print]').disabled=false;save();
- }catch(e){error('s-error',e.message);$('service-results').replaceChildren();text('s-context','');document.querySelector('[data-panel="services"] [data-print]').disabled=true;}
+  error('s-error');document.querySelector('[data-panel="services"] [data-print]').disabled=false;$('s-credit').disabled=false;save();if(serviceFinanceDialog.open)renderServiceFinanceDialog();
+ }catch(e){error('s-error',e.message);$('s-credit').disabled=true;$('service-results').replaceChildren();text('s-context','');document.querySelector('[data-panel="services"] [data-print]').disabled=true;}
 }
 let catalogPath=[];
 const cards=[];
@@ -178,7 +225,7 @@ options('s-device',Object.keys(D.serviceCalculator).map(k=>[k,k]));options('s-mo
 serviceCategories();restore(['s-category']);serviceChoices();restore(['s-price','s-glass','s-acc','s-trade','s-model']);enhanceDropdown('s-device');enhanceDropdown('s-category');enhanceDropdown('s-model');refreshCustomDropdowns();
 ready=true;renderInstallment();renderPaper();renderServices();renderProducts();renderCatalog();$('products-link').href=D.productsUrl;
 $('i-bank').addEventListener('change',()=>{installTerms();renderInstallment();});$('p-kind').addEventListener('change',()=>{paperTerms();renderPaper();});$('p-product').addEventListener('change',renderPaper);$('s-device').addEventListener('change',serviceCategories);$('s-category').addEventListener('change',serviceChoices);
-for(const [id,render] of [['installment-form',renderInstallment],['paper-form',renderPaper],['service-form',renderServices]]){const form=$(id);form.addEventListener('submit',e=>{e.preventDefault();render();});form.addEventListener('input',e=>{if(e.target.tagName==='INPUT')render();});form.addEventListener('change',render);}$( 's-credit')?.addEventListener('click',()=>{serviceCreditsVisible=!serviceCreditsVisible;const creditButton=$('s-credit');creditButton?.setAttribute('aria-expanded',String(serviceCreditsVisible));if(creditButton)creditButton.textContent=serviceCreditsVisible?'Приховати платежі':'Показати платежі';creditButton?.classList.toggle('primary',serviceCreditsVisible);creditButton?.classList.toggle('secondary',!serviceCreditsVisible);renderServices();if(serviceCreditsVisible)document.querySelector('#service-results')?.scrollIntoView({behavior:'smooth',block:'start'});});
+for(const [id,render] of [['installment-form',renderInstallment],['paper-form',renderPaper],['service-form',renderServices]]){const form=$(id);form.addEventListener('submit',e=>{e.preventDefault();render();});form.addEventListener('input',e=>{if(e.target.tagName==='INPUT')render();});form.addEventListener('change',render);}$('s-credit')?.addEventListener('click',()=>openServiceFinance());
 $('installment-form').addEventListener('reset',()=>setTimeout(()=>{installTerms();renderInstallment();},0));
 document.querySelectorAll('[data-product]').forEach(b=>b.addEventListener('click',()=>renderProducts(b.dataset.product)));
 $('catalog-search')?.addEventListener('input',renderCatalog);$('catalog-home')?.addEventListener('click',()=>openCatalog([]));
@@ -209,7 +256,7 @@ document.querySelectorAll('[data-print]').forEach(b=>b.addEventListener('click',
 document.querySelectorAll('[data-export]').forEach(b=>b.addEventListener('click',()=>{const rows=exports[b.dataset.export];if(!rows.length)return;const body=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob(['\uFEFF'+body],{type:'text/csv;charset=utf-8;'}));const a=node('a');a.href=url;a.download=b.dataset.export+'-calculation.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}));
 const {paperSheetUrl,parseCsv,parsePaperRows}=CreditSource;
 const partitionCreditCatalogs=()=>CreditSource.partitionCreditCatalogs(D),ensurePromoProducts=()=>CreditSource.ensurePromoProducts(D);
-async function syncPaperCredits(){try{const response=await fetch(paperSheetUrl,{cache:'no-store'});if(!response.ok)throw new Error('sheet '+response.status);const parsed=parsePaperRows(parseCsv(await response.text()));if(!parsed)throw new Error('empty sheet');for(const kind of ['promo_credit_products','regular_credit_products'])if(Object.keys(parsed[kind]).length)D.credit[kind]=parsed[kind];partitionCreditCatalogs();ensurePromoProducts();localStorage.setItem('payment-desk-paper-sync',JSON.stringify({updatedAt:new Date().toISOString(),data:{promo_credit_products:D.credit.promo_credit_products,regular_credit_products:D.credit.regular_credit_products}}));paperTerms();renderPaper();renderProducts();if(serviceCreditsVisible)renderServices();}catch(error){try{const cached=JSON.parse(localStorage.getItem('payment-desk-paper-sync'));if(cached?.data){D.credit.promo_credit_products=cached.data.promo_credit_products;D.credit.regular_credit_products=cached.data.regular_credit_products;partitionCreditCatalogs();ensurePromoProducts();paperTerms();renderPaper();renderProducts();}}catch{}}}
+async function syncPaperCredits(){try{const response=await fetch(paperSheetUrl,{cache:'no-store'});if(!response.ok)throw new Error('sheet '+response.status);const parsed=parsePaperRows(parseCsv(await response.text()));if(!parsed)throw new Error('empty sheet');for(const kind of ['promo_credit_products','regular_credit_products'])if(Object.keys(parsed[kind]).length)D.credit[kind]=parsed[kind];partitionCreditCatalogs();ensurePromoProducts();localStorage.setItem('payment-desk-paper-sync-v2',JSON.stringify({updatedAt:new Date().toISOString(),data:{promo_credit_products:D.credit.promo_credit_products,regular_credit_products:D.credit.regular_credit_products}}));paperTerms();renderPaper();renderProducts();if(serviceCreditsVisible)renderServices();}catch(error){try{const cached=JSON.parse(localStorage.getItem('payment-desk-paper-sync-v2'));if(cached?.data){D.credit.promo_credit_products=cached.data.promo_credit_products;D.credit.regular_credit_products=cached.data.regular_credit_products;partitionCreditCatalogs();ensurePromoProducts();paperTerms();renderPaper();renderProducts();}}catch{}}}
 if(globalThis.SiteSettings?.paperSource!=='manual'){partitionCreditCatalogs();ensurePromoProducts();paperTerms();renderPaper();renderProducts();syncPaperCredits();setInterval(syncPaperCredits,15*60*1000);}
 const savedTheme=localStorage.getItem('payment-desk-theme');if(savedTheme!=='light')document.body.classList.add('dark-theme');
 function updateThemeButton(){const dark=document.body.classList.contains('dark-theme'),button=document.querySelector('[data-theme-toggle]');if(!button)return;button.setAttribute('aria-label',dark?'Увімкнути світлу тему':'Увімкнути чорну тему');button.querySelector('.theme-icon').textContent=dark?'☀':'☾';button.querySelector('.theme-label').textContent=dark?'Світла тема':'Чорна тема';}

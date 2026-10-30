@@ -16,7 +16,7 @@
  }
  function paper(price,down,product,bank){
   validate(price,down);const principal=price-down,months=Number(product.months),limit=toCents(bank.max_amount);
-  if(principal>limit)throw new Error('Сума кредиту перевищує ліміт банку.');
+  if(principal>limit){const amount=v=>new Intl.NumberFormat('uk-UA',{maximumFractionDigits:2}).format(v/100)+' грн';throw new Error('Сума кредиту перевищує ліміт банку. Сума: '+amount(principal)+'; ліміт: '+amount(limit)+'.');}
   const commission=percent(principal,bank.commission_percent),sms=toCents(bank.sms_amount)*(bank.sms_mode==='monthly'?months:1),repayment=principal+commission+sms;
   return {principal,commission,sms,repayment,monthly:Number(divide(BigInt(repayment),BigInt(months))),principalMonthly:Number(divide(BigInt(principal),BigInt(months))),total:repayment+down,over:commission+sms,months};
  }

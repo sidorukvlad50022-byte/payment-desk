@@ -356,3 +356,43 @@ body:not(.dark-theme) .receipt-row{background:#fff;border-color:#dce5da}body:not
  #service-results .service-finance-print dl>div:first-child{font-size:12px;margin-bottom:2px}
  #service-results .service-finance-print .error{font-size:11px;line-height:1.4}
 }
+
+.service-finance-dialog{width:min(620px,calc(100% - 28px));max-height:calc(100dvh - 40px);overflow:auto;margin:auto;padding:28px;border:1px solid #3e5142;border-radius:20px;background:#101712;color:#e8eee5;box-shadow:0 24px 100px #0008;font:inherit}
+.service-finance-dialog::backdrop{background:#050a07b8;backdrop-filter:blur(5px)}
+.service-finance-dialog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:22px}
+.service-finance-dialog h2{font-size:22px;line-height:1.3;margin:8px 0 0;color:inherit}
+#service-finance-close{padding:0 8px;background:transparent;border:0;color:inherit;font-size:30px;line-height:1.1}
+.service-finance-dialog label{display:block;margin:16px 0 8px}
+.service-finance-dialog select{width:100%;max-width:100%;padding:12px;border:1px solid #3e5142;border-radius:10px;background:#0b100d;color:inherit;font:inherit}
+.service-finance-dialog .service-finance-kind{max-width:none;width:100%;min-width:0}
+.service-finance-dialog .service-credit-box{border:0;padding:0;margin:0}
+.service-finance-dialog .service-credit-quote{margin-top:18px;line-height:1.6}
+.service-finance-dialog .service-credit-quote strong{color:#d9ff00}
+.service-finance-dialog .field-help{font-size:13px;line-height:1.6;color:#a6b5a5}
+.service-finance-dialog .secondary{margin-top:18px;min-height:42px}
+#service-finance-done{width:100%}
+body:not(.dark-theme) .service-finance-dialog{background:#fff;color:#203628;border-color:#cad9c7}
+body:not(.dark-theme) .service-finance-dialog select{background:#f5f8f3;border-color:#cad9c7}
+body:not(.dark-theme) .service-finance-dialog .service-credit-quote strong{color:#31572d}
+body:not(.dark-theme) .service-finance-dialog .field-help{color:#61735e}
+@media(max-width:620px){.service-finance-dialog{padding:20px;max-height:calc(100dvh - 24px)}.service-finance-dialog h2{font-size:19px}}
+@media print{.service-finance-dialog{display:none!important}}
+
+.service-finance-card-controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:16px}
+.service-finance-applied{margin-top:18px;padding:16px;border:1px solid #415b37;border-radius:12px;background:#162319}
+.service-finance-applied>strong{display:block;color:#d9ff00;font-size:13px;margin-bottom:12px}
+.service-finance-applied-summary .service-finance-print-bank+.service-finance-print-bank{border-top:1px solid #354d37;margin-top:10px;padding-top:10px}
+.service-finance-applied-summary dl{margin:0;font-size:12px;line-height:1.6}
+.service-finance-applied-summary dl>div{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.service-finance-applied-summary dt{color:#a7b8a4}.service-finance-applied-summary dd{margin:0;text-align:right;font-weight:700}
+body:not(.dark-theme) .service-finance-applied{background:#eff6ea;border-color:#bfd1b6}
+body:not(.dark-theme) .service-finance-applied>strong{color:#31572d}
+body:not(.dark-theme) .service-finance-applied-summary dt{color:#60745c}
+@media print{.service-finance-applied,.service-finance-card-controls{display:none!important}}
+
+@media print{#service-results .service-credit-box.service-finance-unapplied{display:none!important}}
+
+.service-finance-applied-summary dd{color:#f2f8ed}
+.service-finance-applied-summary dl>div:last-child dd{color:#d9ff00}
+body:not(.dark-theme) .service-finance-applied-summary dd{color:#203628}
+body:not(.dark-theme) .service-finance-applied-summary dl>div:last-child dd{color:#31572d}
