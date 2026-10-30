@@ -396,3 +396,9 @@ body:not(.dark-theme) .service-finance-applied-summary dt{color:#60745c}
 .service-finance-applied-summary dl>div:last-child dd{color:#d9ff00}
 body:not(.dark-theme) .service-finance-applied-summary dd{color:#203628}
 body:not(.dark-theme) .service-finance-applied-summary dl>div:last-child dd{color:#31572d}
+
+/* Center the initial device condition choices. */
+@media screen and (min-width:681px){#catalog-content.catalog-condition-grid{grid-template-columns:repeat(2,minmax(0,420px));justify-content:center}}
+
+#s-credit[aria-pressed="true"]{background:#d4f000;color:#15200e;border-color:#d4f000}
+.service-finance-card-controls button:disabled{opacity:.4;cursor:not-allowed}
