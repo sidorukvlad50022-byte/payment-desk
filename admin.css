@@ -9,3 +9,5 @@
 @media(max-width:760px){.promo-access-list{grid-template-columns:1fr}}
 
 .promo-condition-group{padding-top:16px;margin-top:16px;border-top:1px solid #d8e2d5}.promo-condition-group h4{font-size:16px;margin:0 0 12px;color:#285c40}
+
+.token-preferences{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}.token-remember{display:flex;align-items:center;gap:9px;margin:0;cursor:pointer}.token-remember input{width:auto;margin:0;flex-shrink:0}
