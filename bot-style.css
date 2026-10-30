@@ -326,3 +326,33 @@ body:not(.dark-theme) .receipt-row{background:#fff;border-color:#dce5da}body:not
 }
 
 .service-form-actions{align-items:flex-end;gap:14px;flex-wrap:wrap}.service-finance-kind{min-width:220px;max-width:100%;flex:0 1 340px}.service-finance-kind label{display:block;margin-bottom:8px}.service-credit-box>label,.service-finance-term>label{display:block;margin:12px 0 6px}.service-credit-box>select,.service-finance-term>select{width:100%;max-width:100%}.service-credit-quote .field-help{margin:8px 0 14px;line-height:1.6}.service-credit-box>.secondary{margin-top:14px}@media(max-width:620px){.service-finance-kind{flex-basis:100%;min-width:0}.service-credit-box{min-width:0}}
+
+/* Keep the detailed breakdown on screen; simplify the customer PDF. */
+@media print{
+ #service-results .service-price-table .service-price-breakdown{display:none!important}
+ #service-results .service-price-table{table-layout:fixed;width:100%}
+ #service-results .service-price-table .service-price-term{width:36%;vertical-align:middle}
+ #service-results .service-price-table th.service-price-total{width:64%;font-size:13px!important;font-weight:800!important;text-align:right;padding:7px 8px!important}
+ #service-results .service-price-table td.service-price-total{font-size:18px!important;line-height:1.25!important;font-weight:900!important;text-align:right;white-space:nowrap;padding:10px 8px!important;background:#e7e7e7!important;color:#000!important;border-top:2px solid #222!important;border-bottom:2px solid #222!important}
+}
+
+@media print{
+ #service-results .service-card details{font-size:12px!important;line-height:1.4!important}
+ #service-results .service-card details li,#service-results .service-card details p{font-size:12px!important;line-height:1.4!important;color:#111!important;margin-top:2px;margin-bottom:2px}
+ #service-results .service-card details ul{padding-left:17px;margin-top:8px;margin-bottom:8px}
+ #service-results .service-card details h3{font-size:13px!important;line-height:1.35!important;margin-top:10px;margin-bottom:6px}
+}
+
+.service-finance-print{display:none}
+@media print{
+ #service-results .service-credit-box>label,#service-results .service-credit-box>.service-finance-term,#service-results .service-credit-box>.service-credit-quote{display:none!important}
+ #service-results .service-finance-print{display:block!important;font-size:11px;line-height:1.25;color:#111!important}
+ #service-results .service-finance-print-bank{padding:2px 0;break-inside:avoid}
+ #service-results .service-finance-print-bank+.service-finance-print-bank{border-top:1px solid #ccc;margin-top:3px;padding-top:5px}
+ #service-results .service-finance-print dl{display:block;margin:0;padding:0}
+ #service-results .service-finance-print dl>div{display:flex;justify-content:space-between;gap:10px;padding:1px 0}
+ #service-results .service-finance-print dt{margin:0;font-weight:400}
+ #service-results .service-finance-print dd{margin:0;text-align:right;font-weight:700}
+ #service-results .service-finance-print dl>div:first-child{font-size:12px;margin-bottom:2px}
+ #service-results .service-finance-print .error{font-size:11px;line-height:1.4}
+}

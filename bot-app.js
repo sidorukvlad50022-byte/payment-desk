@@ -98,16 +98,28 @@ function serviceFinanceBox(total,key,termLabel){
  const termField=node('div',undefined,'service-finance-term'),termLabelNode=node('label','Кількість платежів');termLabelNode.htmlFor=id+'-term';term.id=id+'-term';termField.append(termLabelNode,term);termField.hidden=kind!=='installment';
  const catalog=kind==='installment'?D.credit.installment_banks:kind==='regular'?D.credit.regular_credit_products:D.credit.promo_credit_products;
  for(const name of Object.keys(catalog||{})){const option=node('option',name);option.value=name;select.append(option);}if(Object.hasOwn(catalog||{},state.product))select.value=state.product;
- const update=()=>{
-  const chosen=catalog?.[select.value],lines=[];state.product=select.value;state.term=term.value;serviceFinanceSelections.set(stateKey,state);
-  if(!chosen){quote.replaceChildren(node('p','Немає доступних пропозицій для цього способу оплати.'));return;}
-  lines.push(node('strong',kind==='installment'?'Оплата частинами · '+select.value:(kind==='regular'?'Звичайний кредит':'Акційний кредит')+' · '+select.value));
-  lines.push(node('p','Сума з послугою: '+money(total)+' · без першого внеску. Строк послуги: '+termLabel+'.','field-help'));
-  if(kind==='installment'){
-   try{const rate=chosen.payment_options[term.value],result=C.installment(total,0,Number(term.value),rate);lines.push(node('div',money(result.monthly)+' / міс.'),node('p',term.value+' платежів · Комісія '+rate+'% ('+money(result.commission)+') · Разом '+money(result.total),'field-help'));}catch(error){lines.push(node('p',error.message,'error'));}
-  }else for(const [name,bank] of Object.entries(chosen.banks||{})){
-   try{const result=C.paper(total,0,chosen,bank);lines.push(node('div',name+': '+money(result.monthly)+' / міс.'),node('p',result.months+' міс. · Комісія '+bank.commission_percent+'% ('+money(result.commission)+') · SMS '+money(result.sms)+' · Разом '+money(result.total),'field-help'));}catch(error){lines.push(node('p',name+': '+error.message,'error'));}
+ const printSummary=node('div',undefined,'service-finance-print');let printOffers=[];
+ const printBank=(name,result,errorMessage)=>printOffers.push({name,result,errorMessage});
+ const renderBestBanks=()=>{
+  const best=printOffers.filter(offer=>offer.result).sort((a,b)=>a.result.monthly-b.result.monthly||a.result.total-b.result.total||a.name.localeCompare(b.name,'uk-UA')).slice(0,2);
+  if(!best.length){printSummary.append(node('p','Немає доступних пропозицій для цієї суми.','error'));return;}
+  for(const {name,result} of best){
+   const block=node('div',undefined,'service-finance-print-bank'),list=node('dl');
+   for(const [label,value] of [['Банк',name],['Загальна сума',money(result.total)],['Платежі',String(result.months)+' × '+money(result.monthly)]]){const row=node('div');row.append(node('dt',label),node('dd',value));list.append(row);}block.append(list);printSummary.append(block);
   }
+ };
+ const update=()=>{
+  printOffers=[];printSummary.replaceChildren();
+  const chosen=catalog?.[select.value],lines=[];state.product=select.value;state.term=term.value;serviceFinanceSelections.set(stateKey,state);
+  if(!chosen){quote.replaceChildren(node('p','Немає доступних пропозицій для цього способу оплати.'));printSummary.append(node('p','Немає доступних пропозицій.'));return;}
+  lines.push(node('strong',kind==='installment'?'Оплата частинами · '+select.value:(kind==='regular'?'Звичайний кредит':'Акційний кредит')+' · '+select.value));
+  lines.push(node('p','Сума з послугою: '+money(total)+' · без першого внеску. Термін послуги: '+termLabel+'.','field-help'));
+  if(kind==='installment'){
+   try{const rate=chosen.payment_options[term.value],result=C.installment(total,0,Number(term.value),rate);printBank(select.value,result);lines.push(node('div',money(result.monthly)+' / міс.'),node('p',term.value+' платежів · Комісія '+rate+'% ('+money(result.commission)+') · Разом '+money(result.total),'field-help'));}catch(error){printBank(select.value,null,error.message);lines.push(node('p',error.message,'error'));}
+  }else for(const [name,bank] of Object.entries(chosen.banks||{})){
+   try{const result=C.paper(total,0,chosen,bank);printBank(name,result);lines.push(node('div',name+': '+money(result.monthly)+' / міс.'),node('p',result.months+' міс. · Комісія '+bank.commission_percent+'% ('+money(result.commission)+') · SMS '+money(result.sms)+' · Разом '+money(result.total),'field-help'));}catch(error){printBank(name,null,error.message);lines.push(node('p',name+': '+error.message,'error'));}
+  }
+  renderBestBanks();
   quote.replaceChildren(...lines);
  };
  const updateTerms=()=>{term.replaceChildren();for(const [months,rate] of Object.entries(catalog?.[select.value]?.payment_options||{})){const option=node('option',months+' платежів · '+rate+'%');option.value=months;term.append(option);}if([...term.options].some(o=>o.value===state.term))term.value=state.term;};
@@ -117,7 +129,7 @@ function serviceFinanceBox(total,key,termLabel){
   if(kind==='installment'){$('i-price').value=(total/100).toFixed(2);$('i-down').value='0';$('i-extra').value='0';$('i-bank').value=select.value;installTerms();$('i-term').value=term.value;renderInstallment();location.hash='installment';}
   else{$('p-price').value=(total/100).toFixed(2);$('p-down').value='0';$('p-extra').value='0';$('p-kind').value=kind==='regular'?'regular_credit_products':'promo_credit_products';paperTerms();$('p-product').value=select.value;refreshCustomDropdowns();renderPaper();location.hash='paper';}
  });
- box.append(label,select,termField,quote,open);box.hidden=!serviceCreditsVisible;return box;
+ box.append(label,select,termField,quote,printSummary,open);box.hidden=!serviceCreditsVisible;return box;
 }
 function renderServices(){
  try{
@@ -129,8 +141,8 @@ function renderServices(){
   const cards=[];
   for(const title of selected){
    const noWarranty=title==='Без гарантії',offer=noWarranty?{variants:[['Без гарантії','0','0']],benefits:[],extra_sections:[]}:offers[title],card=node('article',undefined,'card service-card'),baseTotal=price+glass+acc-trade,firstResult=noWarranty?{total:baseTotal,price:0,discount:0}:C.service(device,title,price,glass,acc,trade,offer.variants?.[0]||[],offer.glass_discount_percent),heading=node('div',undefined,'service-card-heading');heading.append(node('h2',title),node('strong',`Доплата: ${money(firstResult.total-baseTotal)}`));card.append(node('div',device+' · '+category,'eyebrow'),heading);
-   const table=node('table',undefined,'service-price-table'),thead=node('thead'),tr=node('tr');['Строк','Послуга','Знижка на скло','Разом'].forEach(h=>tr.append(node('th',h)));thead.append(tr);table.append(thead);const body=node('tbody');
-   for(const variant of offer.variants){const r=noWarranty?{price:0,discount:0,total:baseTotal}:C.service(device,title,price,glass,acc,trade,variant,offer.glass_discount_percent),row=node('tr');[variant[0],money(r.price),money(r.discount),money(r.total)].forEach(v=>row.append(node('td',v)));body.append(row);}
+   const table=node('table',undefined,'service-price-table'),thead=node('thead'),tr=node('tr');['Термін','Послуга','Знижка на скло','Разом'].forEach((h,i)=>tr.append(node('th',h,i===1||i===2?'service-price-breakdown':i===3?'service-price-total':'service-price-term')));thead.append(tr);table.append(thead);const body=node('tbody');
+   for(const variant of offer.variants){const r=noWarranty?{price:0,discount:0,total:baseTotal}:C.service(device,title,price,glass,acc,trade,variant,offer.glass_discount_percent),row=node('tr');[variant[0],money(r.price),money(r.discount),money(r.total)].forEach((v,i)=>row.append(node('td',v,i===1||i===2?'service-price-breakdown':i===3?'service-price-total':'service-price-term')));body.append(row);}
    table.append(body);const creditBox=serviceFinanceBox(firstResult.total,device+'|'+category+'|'+title,offer.variants[0][0]);card.append(table,node('p',offer.variants.map(v=>`${v[0]}: ${v[1]}%${Number(v[2])?' · мін. '+money(C.toCents(v[2])):''}`).join(' / ')));
    const details=node('details'),summary=node('summary','Що входить у послугу');details.append(summary);contentSections(details,offer.benefits,offer.extra_sections);card.append(details,creditBox);cards.push(card);
   }
