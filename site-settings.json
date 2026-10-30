@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "paperSource": "sheet",
+  "credit": null,
+  "serviceCalculator": null,
+  "services": null,
+  "pages": {},
+  "site": {
+    "title": "Yabluka Helper",
+    "description": "Yabluka Helper — калькулятор кредитних платежів, послуги та шпаргалка менеджера."
+  }
+}

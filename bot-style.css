@@ -324,3 +324,5 @@ body:not(.dark-theme) .receipt-row{background:#fff;border-color:#dce5da}body:not
   .product-table{max-height:none!important}
   a[href]:after{content:none!important}
 }
+
+.service-form-actions{align-items:flex-end;gap:14px;flex-wrap:wrap}.service-finance-kind{min-width:220px;max-width:100%;flex:0 1 340px}.service-finance-kind label{display:block;margin-bottom:8px}.service-credit-box>label,.service-finance-term>label{display:block;margin:12px 0 6px}.service-credit-box>select,.service-finance-term>select{width:100%;max-width:100%}.service-credit-quote .field-help{margin:8px 0 14px;line-height:1.6}.service-credit-box>.secondary{margin-top:14px}@media(max-width:620px){.service-finance-kind{flex-basis:100%;min-width:0}.service-credit-box{min-width:0}}

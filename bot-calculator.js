@@ -20,13 +20,13 @@
   const commission=percent(principal,bank.commission_percent),sms=toCents(bank.sms_amount)*(bank.sms_mode==='monthly'?months:1),repayment=principal+commission+sms;
   return {principal,commission,sms,repayment,monthly:Number(divide(BigInt(repayment),BigInt(months))),principalMonthly:Number(divide(BigInt(principal),BigInt(months))),total:repayment+down,over:commission+sms,months};
  }
- function service(device,title,product,glass,accessories,trade,variant){
+ function service(device,title,product,glass,accessories,trade,variant,glassDiscount){
   if(![product,glass,accessories,trade].every(x=>Number.isSafeInteger(x)&&x>=0)||product<=0)throw new Error('Введіть додатну ціну пристрою та невід’ємні суми доповнень.');
   const basket=product+glass+accessories-trade;if(basket<=0)throw new Error('Trade-in має бути меншим за суму покупки.');
   const price=Math.max(percent(product,variant[1]),toCents(variant[2]));
   const outlet=device==='♻️ Outlet';
   const fullGlass=!outlet&&(title.startsWith('Розширена гарантія')||title==='Гарантований захист 2.0'||title==='Абсолютний захист 2.0');
-  const discount=fullGlass?glass:outlet?percent(glass,'30'):0;
+  const discount=glassDiscount!==undefined?percent(glass,glassDiscount):fullGlass?glass:outlet?percent(glass,'30'):0;
   return {basket,price,discount,total:basket+price-discount};
  }
  const api={toCents,percent,installment,paper,service};
