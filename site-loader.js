@@ -8,5 +8,5 @@
   SiteCMS.apply(BotData,settings);
  }catch(error){console.warn('Використано базову конфігурацію:',error.message);const notice=document.createElement('p');notice.role='status';notice.className='error';notice.textContent='Не вдалося завантажити актуальні налаштування. Показано базові умови; оновіть сторінку перед розрахунком.';document.querySelector('main').prepend(notice);}
  globalThis.SiteSettings=settings;
- const script=document.createElement('script');script.src='bot-app.js?v=20261030-credit-toggle1';script.onerror=()=>{document.querySelector('main').prepend(Object.assign(document.createElement('p'),{textContent:'Не вдалося завантажити сайт. Оновіть сторінку.'}));};document.body.append(script);
+ const script=document.createElement('script');script.src='bot-app.js?v=20261030-credit-tabs1';script.onerror=()=>{document.querySelector('main').prepend(Object.assign(document.createElement('p'),{textContent:'Не вдалося завантажити сайт. Оновіть сторінку.'}));};document.body.append(script);
 })();
