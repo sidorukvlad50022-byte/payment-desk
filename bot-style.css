@@ -402,3 +402,24 @@ body:not(.dark-theme) .service-finance-applied-summary dl>div:last-child dd{colo
 
 #s-credit[aria-pressed="true"]{background:#d4f000;color:#15200e;border-color:#d4f000}
 .service-finance-card-controls button:disabled{opacity:.4;cursor:not-allowed}
+
+.repair-picker{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:26px;margin-bottom:24px}.repair-picker>div{flex:1;max-width:560px}.repair-picker label{display:block;margin-bottom:10px;font-weight:700}.repair-picker select{width:100%}.repair-picker>a{white-space:nowrap}.repair-price-card{padding:26px}.repair-price-card h2{margin:0 0 12px}.repair-table{width:100%;table-layout:fixed;white-space:normal}.repair-table th,.repair-table td{padding:16px 12px;text-align:left;overflow-wrap:anywhere}.repair-table th:first-child{width:55%}.repair-table tbody th{font-size:14px;font-weight:500;background:transparent}.repair-table tbody td:nth-child(2){font-weight:800;color:#d4f000}.repair-unavailable td{color:#91a08f!important;font-weight:400!important}.repair-table tbody th{color:inherit}.repair-table-wrap{margin-top:20px}body:not(.dark-theme) .repair-table tbody td:nth-child(2){color:#285c40}
+@media(max-width:680px){.repair-picker{align-items:stretch;flex-direction:column;padding:20px}.repair-price-card{padding:20px 12px}.repair-price-card h2,.repair-price-card>p{margin-left:8px}.repair-table th,.repair-table td{padding:13px 6px;font-size:12px}.repair-table tbody th{font-size:12px}.repair-table th:first-child{width:48%}}
+
+.repair-print-heading{display:none}
+@media print{
+ @page repair-price{size:A4 portrait;margin:12mm}
+ [data-panel="repairs"]{page:repair-price}
+ .repair-picker{display:none!important}
+ .repair-price-card{padding:0!important;border:0!important;border-radius:0!important;background:#fff!important;color:#111!important;box-shadow:none!important}
+ .repair-print-heading{display:block;margin:0 0 5px;font-size:14px;font-weight:700;color:#111!important}
+ .repair-price-card h2{margin:0 0 8px;font-size:23px;color:#111!important}
+ .repair-price-card>p{margin-left:0;color:#444!important;font-size:10px;line-height:1.4}
+ .repair-table-wrap{margin-top:12px}
+ .repair-table th,.repair-table td{position:static;padding:8px 10px!important;font-size:11px!important;line-height:1.3;color:#111!important;background:#fff!important;border-bottom:1px solid #ccc}
+ .repair-table thead th{background:#eee!important;font-weight:700}
+ .repair-table th:first-child{width:75%}
+ .repair-table tbody td:nth-child(2){color:#111!important;white-space:nowrap}
+ .repair-table tr{break-inside:avoid}
+ .repair-table thead{display:table-header-group}
+}
