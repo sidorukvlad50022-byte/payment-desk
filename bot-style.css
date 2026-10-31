@@ -423,3 +423,35 @@ body:not(.dark-theme) .service-finance-applied-summary dl>div:last-child dd{colo
  .repair-table tr{break-inside:avoid}
  .repair-table thead{display:table-header-group}
 }
+
+body:not(.dark-theme) .brand{color:#1b271e}
+body:not(.dark-theme) .brand-copy small,body:not(.dark-theme) .header-brand small{color:#42622e}
+
+@media(min-width:681px) and (max-width:1100px){.receipt-row{grid-template-columns:110px 80px minmax(0,1fr) 68px 96px 96px 32px;gap:8px}.receipt-row input{min-width:0}.receipt-row-total{font-size:12px}}
+
+.receipt-print-sheet,.repair-print-date{display:none}
+@media print{
+ @page receipt-purchase{size:A4 portrait;margin:12mm}
+ [data-panel="receipt"]{page:receipt-purchase}
+ [data-panel="receipt"] .receipt-builder{display:none!important}
+ .receipt-print-sheet{display:block!important;color:#111!important;background:#fff!important}
+ .receipt-print-sheet h1{margin:0 0 6px;font-size:23px;color:#111!important}
+ .receipt-print-sheet>p{margin:0 0 20px;font-size:11px;color:#444!important}
+ .receipt-print-sheet table{width:100%;table-layout:fixed;white-space:normal}
+ .receipt-print-sheet th,.receipt-print-sheet td{position:static;padding:10px 8px!important;font-size:11px!important;line-height:1.4;color:#111!important;background:#fff!important;border-bottom:1px solid #ccc;overflow-wrap:anywhere}
+ .receipt-print-sheet th{font-weight:700;background:#eee!important}
+ .receipt-print-sheet th:first-child{width:55%;text-align:left}
+ .receipt-print-sheet th:not(:first-child),.receipt-print-sheet td:not(:first-child){text-align:right}
+ .receipt-print-sheet thead{display:table-header-group}
+ .receipt-print-sheet tr{break-inside:avoid}
+ .receipt-print-total{display:flex;justify-content:space-between;align-items:center;border-top:2px solid #111;margin-top:18px;padding:14px 8px;font-size:20px;break-inside:avoid}
+ #repair-updated{display:none!important}
+ .repair-print-date{display:block!important;color:#444!important}
+}
+@media print{
+ #service-results .service-card details h3{color:#111!important}
+ #service-results .service-finance-print dl>div{margin:0!important;line-height:1.4}
+ #service-results .service-finance-print dt,#service-results .service-finance-print dd{color:#222!important}
+}
+
+@media print{.service-finance-dialog{display:none!important}}

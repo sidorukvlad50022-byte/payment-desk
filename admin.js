@@ -104,7 +104,7 @@
   try{const remote=await remoteFile();remoteKnown=true;baselineSha=remote?.sha||null;if(remote)settings=C.validate(JSON.parse(decode(remote.content)));}catch{notice('Поточний стан GitHub недоступний. Чернетку можна редагувати, але публікація потребує повторного завантаження панелі.',true);}
   draft=materialize(settings);
   if(draft.paperSource==='sheet'){
-   try{const r=await fetch(CreditSource.paperSheetUrl,{cache:'no-store',signal:AbortSignal.timeout(6000)});if(!r.ok)throw new Error('sheet');const parsed=CreditSource.parsePaperRows(CreditSource.parseCsv(await r.text()));if(!parsed)throw new Error('empty');Object.assign(draft.credit,parsed);CreditSource.partitionCreditCatalogs({credit:draft.credit});CreditSource.ensurePromoProducts({credit:draft.credit});}
+   try{const r=await fetch(CreditSource.paperSheetUrl,{cache:'no-store',signal:AbortSignal.timeout(6000)});if(!r.ok)throw new Error('sheet');const {data:parsed,warnings}=CreditSource.parsePaperRowsDetailed(CreditSource.parseCsv(await r.text()));if(warnings.length)notice('Частину умов не імпортовано: '+warnings.join(' '),true);if(!parsed)throw new Error('empty');Object.assign(draft.credit,parsed);CreditSource.partitionCreditCatalogs({credit:draft.credit});CreditSource.ensurePromoProducts({credit:draft.credit});}
    catch{CreditSource.partitionCreditCatalogs({credit:draft.credit});CreditSource.ensurePromoProducts({credit:draft.credit});notice('Google-таблиця недоступна. Показано збережені ставки. Перевірте їх перед переходом на ручне керування.',true);}
   }
   published=C.clone(draft);

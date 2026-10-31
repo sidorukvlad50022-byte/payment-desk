@@ -5,6 +5,7 @@
  if(!data||!select||!body)return;
  const element=(tag,value)=>{const e=document.createElement(tag);e.textContent=value;return e;};
  const refresh=document.getElementById('repair-refresh'),status=document.getElementById('repair-updated');
+ const printInfo=element('p','Прайс станом на '+data.updatedOn+'.');printInfo.className='repair-print-date';document.getElementById('repair-title').after(printInfo);
  let busy=false,live=false;
  function modelOptions(){
   const previous=select.value;select.replaceChildren();
@@ -22,7 +23,7 @@
   if(busy)return;busy=true;refresh.disabled=true;
   try{
    const response=await fetch(RepairSource.url,{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error('HTTP '+response.status);
-   const updated=RepairSource.parse(await response.text());data={...data,...updated};modelOptions();render();live=true;
+   const updated=RepairSource.parse(await response.text());data={...data,...updated,updatedOn:new Date().toLocaleDateString('uk-UA')};printInfo.textContent='Прайс станом на '+data.updatedOn+'.';modelOptions();render();live=true;
    status.textContent='Оновлено з Google-таблиці: '+new Date().toLocaleString('uk-UA')+'.';
   }catch{
    status.textContent=live?'Не вдалося оновити ціни. Залишено останній завантажений прайс.':'Google-таблиця недоступна. Показано резервний прайс станом на '+data.updatedOn+'. Спробуйте «Оновити ціни».';
