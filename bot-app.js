@@ -88,7 +88,6 @@ function renderProducts(kind='installment_banks'){
 function serviceCategories(){options('s-category',Object.keys(D.serviceCalculator[$('s-device').value]).map(s=>[s,s]));serviceChoices();refreshCustomDropdowns();}
 function serviceChoices(){
  const device=$('s-device').value,category=$('s-category').value,offers=D.serviceCalculator[device][category].offers;
- $('s-model-field').hidden=!(device==='♻️ Outlet'&&category.includes('iPhone'));
  $('service-choices').replaceChildren(...['Без гарантії',...Object.keys(offers)].map((name,i)=>{const label=node('label',undefined,'offer-choice'),input=node('input');input.type='checkbox';input.value=name;input.checked=i===0;label.append(input,node('span',name));return label;}));
  renderServices();refreshCustomDropdowns();
 }
@@ -96,7 +95,7 @@ function contentSections(container,benefits,sections){
  const ul=node('ul');benefits.forEach(line=>ul.append(node('li',line)));container.append(ul);
  for(const section of sections||[]){container.append(node('h3',section.title));const block=node(section.bullets?'ul':'div');for(const line of section.lines)block.append(node(section.bullets?'li':'p',line));container.append(block);}
 }
-function renderServicePrintSummary(device,category,model,price,glass,acc,trade){let summary=$('service-print-summary');if(!summary){summary=node('div',undefined,'service-print-summary');summary.id='service-print-summary';const panel=document.querySelector('[data-panel=services]');panel?.insertBefore(summary,$('service-results'));}summary.replaceChildren();const meta=node('div',undefined,'service-print-meta');meta.append(node('div',`Вартість пристрою: ${money(price)}`,'service-print-emphasis'),node('div',`Скло: ${money(glass)}`),node('div',`Аксесуари: ${money(acc)}`),node('div',`Trade-in: − ${money(trade)}`,'service-print-emphasis'),node('strong',`Сума чеку без Сервісу від магазину YABLUKA. ${money(price+glass+acc-trade)}`));summary.append(meta);}
+function renderServicePrintSummary(device,category,price,glass,acc,trade){let summary=$('service-print-summary');if(!summary){summary=node('div',undefined,'service-print-summary');summary.id='service-print-summary';const panel=document.querySelector('[data-panel=services]');panel?.insertBefore(summary,$('service-results'));}summary.replaceChildren();const meta=node('div',undefined,'service-print-meta');meta.append(node('div',`Вартість пристрою: ${money(price)}`,'service-print-emphasis'),node('div',`Скло: ${money(glass)}`),node('div',`Аксесуари: ${money(acc)}`),node('div',`Trade-in: − ${money(trade)}`,'service-print-emphasis'),node('strong',`Сума чеку без Сервісу від магазину YABLUKA. ${money(price+glass+acc-trade)}`));summary.append(meta);}
 let serviceCreditsVisible=false,serviceCreditEnabled=false;
 const serviceFinanceSelections=new Map(),serviceFinanceKinds=new Map(),serviceFinanceAdded=new Set();
 let serviceFinanceDraft=null;
@@ -206,8 +205,7 @@ function renderServices(){
    card.append(financeControls);cards.push(card);
   }
   $('service-results').replaceChildren(...cards);
-  const model=$('s-model-field').hidden?'':` · ${$('s-model').value}`;
-  text('s-context',`${device} · ${category}${model} · Пристрій ${money(price)} + скло ${money(glass)} + аксесуари ${money(acc)} − Trade-in ${money(trade)} = ${money(price+glass+acc-trade)} без послуги. Пропозиції порівнюються окремо.`);renderServicePrintSummary(device,category,model,price,glass,acc,trade);
+  text('s-context',`${device} · ${category} · Пристрій ${money(price)} + скло ${money(glass)} + аксесуари ${money(acc)} − Trade-in ${money(trade)} = ${money(price+glass+acc-trade)} без послуги. Пропозиції порівнюються окремо.`);renderServicePrintSummary(device,category,price,glass,acc,trade);
   error('s-error');document.querySelector('[data-panel="services"] [data-print]').disabled=false;$('s-credit').disabled=false;save();if(serviceFinanceDialog.open)renderServiceFinanceDialog();
  }catch(e){error('s-error',e.message);$('service-finance-done').disabled=true;if(serviceFinanceDialog.open)serviceFinanceDialog.close();$('s-credit').disabled=true;$('service-results').replaceChildren();text('s-context','');document.querySelector('[data-panel="services"] [data-print]').disabled=true;}
 }
@@ -243,15 +241,15 @@ function renderCatalog(){
  const article=node('article',undefined,'card catalog-detail');article.append(node('h2',n.title));const tags=node('div',undefined,'catalog-tags');tags.append(node('span',n.term_label),node('span',n.price_label));article.append(tags);contentSections(article,n.benefits,n.extra_sections);content.append(article);
 }
 function catalogButton(n,label,click){const b=node('button',undefined,'catalog-menu');b.type='button';b.append(node('span',n.type==='menu'?(n.level==='device'?'СТАН ПРИСТРОЮ':'ПРИСТРІЙ'):'УМОВИ ПОСЛУГИ'),node('h2',label),node('p',n.type==='menu'?(n.level==='device'?'Обрати пристрій →':`${Object.keys(n.children).length} послуг →`):`${n.term_label} · ${n.price_label} →`));b.addEventListener('click',click);return b;}
-const storedFields=['i-bank','i-price','i-down','i-term','i-extra','p-kind','p-product','p-term','p-price','p-down','p-extra','s-device','s-category','s-price','s-glass','s-acc','s-trade','s-discount','s-model','s-finance-kind'];
+const storedFields=['i-bank','i-price','i-down','i-term','i-extra','p-kind','p-product','p-term','p-price','p-down','p-extra','s-device','s-category','s-price','s-glass','s-acc','s-trade','s-discount','s-finance-kind'];
 function save(){if(!ready)return;try{localStorage.setItem('payment-desk-bot',JSON.stringify(Object.fromEntries(storedFields.map(k=>[k,$(k).value]))));}catch{}}
 let ready=false,saved={};try{saved=JSON.parse(localStorage.getItem('payment-desk-bot'))||{};}catch{}
 function restore(ids){for(const id of ids)if(typeof saved[id]==='string'&&$(id)){const e=$(id);if(e.tagName!=='SELECT'||[...e.options].some(o=>o.value===saved[id]))e.value=saved[id];}}
 const bankEntries=Object.entries(D.credit.installment_banks).sort((a,b)=>Math.min(...Object.entries(a[1].payment_options).map(([n,r])=>(1+Number(r)/100)/Number(n)))-Math.min(...Object.entries(b[1].payment_options).map(([n,r])=>(1+Number(r)/100)/Number(n)))).map(([name])=>[name,name]);
 options('i-bank',bankEntries);restore(['i-bank']);installTerms();restore(['i-price','i-down','i-term','i-extra']);
 restore(['p-kind']);paperTerms();restore(['p-product','p-term','p-price','p-down','p-extra']);
-options('s-device',Object.keys(D.serviceCalculator).map(k=>[k,k]));options('s-model',D.constantsModels?D.constantsModels.map(k=>[k,k]):[]);restore(['s-device','s-finance-kind']);
-serviceCategories();restore(['s-category']);serviceChoices();restore(['s-price','s-glass','s-acc','s-trade','s-discount','s-model']);enhanceDropdown('s-device');enhanceDropdown('s-category');enhanceDropdown('s-model');refreshCustomDropdowns();
+options('s-device',Object.keys(D.serviceCalculator).map(k=>[k,k]));restore(['s-device','s-finance-kind']);
+serviceCategories();restore(['s-category']);serviceChoices();restore(['s-price','s-glass','s-acc','s-trade','s-discount']);enhanceDropdown('s-device');enhanceDropdown('s-category');refreshCustomDropdowns();
 ready=true;renderInstallment();renderPaper();renderServices();renderProducts();renderCatalog();$('products-link').href=D.productsUrl;
 $('i-bank').addEventListener('change',()=>{installTerms();renderInstallment();});$('p-kind').addEventListener('change',()=>{paperTerms();renderPaper();});$('p-product').addEventListener('change',renderPaper);$('s-device').addEventListener('change',serviceCategories);$('s-category').addEventListener('change',serviceChoices);
 for(const [id,render] of [['installment-form',renderInstallment],['paper-form',renderPaper],['service-form',renderServices]]){const form=$(id);form.addEventListener('submit',e=>{e.preventDefault();render();});form.addEventListener('input',e=>{if(e.target.tagName==='INPUT')render();});form.addEventListener('change',render);}$('s-credit')?.addEventListener('click',()=>{serviceCreditEnabled=!serviceCreditEnabled;$('s-credit').setAttribute('aria-pressed',String(serviceCreditEnabled));renderServices();});
